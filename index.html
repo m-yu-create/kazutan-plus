@@ -582,6 +582,32 @@ p.tab-desc { font-size: 0.85rem; color: var(--ink-soft); margin-bottom: 1.5rem; 
   font-size: 0.9rem;
 }
 
+/* デバイスオーナー選択 */
+.device-owner-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.device-owner-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 24px;
+  background: white;
+  border: 1.5px solid var(--border);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.device-owner-chip.selected {
+  border-color: var(--gold);
+  background: linear-gradient(135deg, #fff 0%, #fef5e0 100%);
+  color: var(--ink);
+}
+.device-owner-chip-emoji { font-size: 1.1rem; }
+
 .add-form {
   display: flex;
   gap: 0.5rem;
@@ -728,9 +754,16 @@ p.tab-desc { font-size: 0.85rem; color: var(--ink-soft); margin-bottom: 1.5rem; 
       <!-- 通知 -->
       <div class="kanri-section">
         <div class="kanri-section-title">🔔 プッシュ通知</div>
+        <div style="font-size: 0.85rem; color: var(--ink-soft); margin-bottom: 0.5rem;">
+          この端末は誰のスマホですか？
+        </div>
+        <div id="deviceOwnerSelect" style="margin-bottom: 0.8rem;"></div>
         <div class="kanri-row">
           <span class="kanri-status" id="notifyStatus">未設定</span>
           <button class="kanri-button primary" id="notifyBtn" onclick="enableNotification()">通知を有効にする</button>
+        </div>
+        <div style="font-size: 0.75rem; color: var(--ink-faint); margin-top: 0.5rem; line-height: 1.5;">
+          💡 ヒント: 自分の端末で <strong>自分</strong> を選んで有効化すると、相手から記録があった時にあなたに通知が届きます。
         </div>
       </div>
 
@@ -830,6 +863,7 @@ let state = {
   records: [],
   selectedConditionMemberId: null,
   selectedFeelingMemberId: null,
+  deviceOwnerId: null,  // この端末は誰のスマホか
   // マネージャー入力中の値
   conditionLevel: null,
   appetite: null,
@@ -842,7 +876,7 @@ let state = {
 // ============================================
 const DEFAULT_MEMBERS = [
   {id: "m1", name: "ゆうま", emoji: "🐰"},
-  {id: "m2", name: "みち", emoji: "🌸"},
+  {id: "m2", name: "かずは", emoji: "🌸"},
 ];
 const CONDITION_LEVELS = [
   {id: "good", label: "元気", emoji: "☀️"},
@@ -1239,7 +1273,37 @@ function renderHistory() {
 // ============================================
 // かんり表示
 // ============================================
+const DEVICE_OWNER_KEY = "kazutan-plus-device-owner";
+
 function renderKanri() {
+  // デバイスオーナー選択UI
+  const ownerEl = document.getElementById("deviceOwnerSelect");
+  if (ownerEl) {
+    // localStorageから復元
+    if (!state.deviceOwnerId) {
+      const saved = localStorage.getItem(DEVICE_OWNER_KEY);
+      if (saved && state.members.find(m => m.id === saved)) {
+        state.deviceOwnerId = saved;
+      }
+    }
+    ownerEl.innerHTML = "";
+    const row = document.createElement("div");
+    row.className = "device-owner-row";
+    state.members.forEach(m => {
+      const chip = document.createElement("div");
+      chip.className = "device-owner-chip";
+      if (state.deviceOwnerId === m.id) chip.classList.add("selected");
+      chip.innerHTML = `<span class="device-owner-chip-emoji">${m.emoji}</span><span>${escapeHtml(m.name)}</span>`;
+      chip.onclick = () => {
+        state.deviceOwnerId = m.id;
+        localStorage.setItem(DEVICE_OWNER_KEY, m.id);
+        renderKanri();
+      };
+      row.appendChild(chip);
+    });
+    ownerEl.appendChild(row);
+  }
+
   // メンバー編集
   const memberList = document.getElementById("memberEditList");
   if (memberList) {
@@ -1326,12 +1390,14 @@ async function updateNotifyStatus() {
 }
 
 async function enableNotification() {
-  const member = state.members.find(m => m.id === state.selectedConditionMemberId)
-              || state.members.find(m => m.id === state.selectedFeelingMemberId)
-              || state.members[0];
-
+  // デバイスオーナーが選ばれているか確認
+  if (!state.deviceOwnerId) {
+    showToast("先に「この端末は誰のスマホか」を選んでください");
+    return;
+  }
+  const member = state.members.find(m => m.id === state.deviceOwnerId);
   if (!member) {
-    showToast("先にメンバーを追加してください");
+    showToast("選択中のメンバーが見つかりません");
     return;
   }
 
@@ -1357,18 +1423,18 @@ async function enableNotification() {
     }
 
     // トークンをDBに保存（メンバーIDの下に、デバイスID別に）
-    const deviceId = "d" + (localStorage.getItem("device-id") || (() => {
-      const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-      localStorage.setItem("device-id", id);
-      return id;
-    })());
+    let deviceId = localStorage.getItem("kazutan-plus-device-id");
+    if (!deviceId) {
+      deviceId = "d" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+      localStorage.setItem("kazutan-plus-device-id", deviceId);
+    }
     await db.ref(`${DB_ROOT}/tokens/${member.id}/${deviceId}`).set({
       token: token,
       updatedAt: Date.now(),
       memberName: member.name,
     });
 
-    showToast("✅ 通知を有効にしました");
+    showToast(`✅ ${member.emoji} ${member.name} の端末として通知を有効にしました`);
     updateNotifyStatus();
   } catch (err) {
     console.error(err);
