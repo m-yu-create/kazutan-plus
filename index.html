@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Kazutan+">
+<meta name="theme-color" content="#c4a05a">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Kazutan+</title>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Noto+Sans+JP:wght@400;500;700;900&family=DM+Mono:wght@400;500&family=Playfair+Display:ital,wght@1,900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-warm: #fdfbf7;
+  --bg-card: #ffffff;
+  --bg-soft: #f7f2e9;
+  --ink: #2a2620;
+  --ink-soft: #6b6259;
+  --ink-faint: #9c9489;
+  --border: #ebe4d6;
+  --condition: #7ba47c;
+  --condition-light: #d8e5d4;
+  --condition-bg: #f0f5ec;
+  --condition-deep: #5a8560;
+  --feeling: #d4a5a5;
+  --feeling-light: #f0d8d8;
+  --feeling-bg: #faf0ef;
+  --feeling-deep: #b87a7a;
+  --gold: #c4a05a;
+  --gold-light: #e8d8a8;
+  --danger: #c54f4f;
+  --shadow-sm: 0 1px 3px rgba(60, 50, 30, 0.04), 0 1px 2px rgba(60, 50, 30, 0.06);
+  --shadow-md: 0 4px 12px rgba(60, 50, 30, 0.06), 0 2px 4px rgba(60, 50, 30, 0.05);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { font-size: 16px; }
+body {
+  font-family: 'Noto Sans JP', sans-serif;
+  background: var(--bg-warm);
+  color: var(--ink);
+  line-height: 1.6;
+  min-height: 100vh;
+  background-image:
+    radial-gradient(at 0% 0%, rgba(196, 160, 90, 0.04) 0%, transparent 40%),
+    radial-gradient(at 100% 100%, rgba(123, 164, 124, 0.03) 0%, transparent 40%);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+/* 合言葉画面 */
+.gate {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  position: relative;
+}
+.gate-card { width: 100%; max-width: 360px; text-align: center; }
+.brand-mark {
+  font-family: 'Playfair Display', 'Caveat', serif;
+  font-size: 4rem;
+  font-weight: 900;
+  font-style: italic;
+  line-height: 1;
+  margin-bottom: 0.3rem;
+}
+.brand-mark .plus {
+  background: linear-gradient(135deg, var(--condition) 0%, var(--gold) 50%, var(--feeling) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 4.5rem;
+  display: inline-block;
+  transform: translateY(-0.2rem);
+}
+.brand-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.4em;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  margin-bottom: 3rem;
+}
+.gate-title { font-size: 1.1rem; margin-bottom: 0.5rem; font-weight: 500; }
+.gate-hint { font-size: 0.85rem; color: var(--ink-soft); margin-bottom: 2rem; }
+.gate-input {
+  width: 100%;
+  padding: 1rem 1.2rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg-card);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 1.1rem;
+  text-align: center;
+  letter-spacing: 0.1em;
+  color: var(--ink);
+  transition: all 0.2s;
+  margin-bottom: 1rem;
+}
+.gate-input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 4px rgba(196, 160, 90, 0.1); }
+.gate-button {
+  width: 100%;
+  padding: 1rem;
+  border: none;
+  border-radius: 14px;
+  background: var(--ink);
+  color: white;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+.gate-button:active { transform: scale(0.98); }
+.gate-footer {
+  position: absolute;
+  bottom: 2rem;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.3em;
+  color: var(--ink-faint);
+}
+
+/* メインアプリ */
+.app { min-height: 100vh; display: none; flex-direction: column; }
+.app.active { display: flex; }
+.gate.hidden { display: none; }
+
+.app-header {
+  padding: 1rem 1.2rem 0.5rem;
+  position: sticky;
+  top: 0;
+  background: rgba(253, 251, 247, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 10;
+  border-bottom: 1px solid var(--border);
+}
+.app-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.8rem;
+}
+.app-header-brand {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 1.6rem;
+  font-weight: 900;
+  display: flex;
+  align-items: baseline;
+  gap: 0.1rem;
+}
+.app-header-brand .plus {
+  background: linear-gradient(135deg, var(--condition) 0%, var(--gold) 50%, var(--feeling) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 1.9rem;
+}
+.app-header-meta {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.sync-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--condition); animation: pulse 2s infinite;
+}
+.sync-dot.offline { background: var(--danger); animation: none; }
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* 上タブ */
+.tab-switcher {
+  display: flex;
+  background: var(--bg-soft);
+  border-radius: 14px;
+  padding: 4px;
+  position: relative;
+  margin-bottom: 0.5rem;
+}
+.tab-btn {
+  flex: 1;
+  padding: 0.7rem 1rem;
+  border: none;
+  background: transparent;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+  cursor: pointer;
+  border-radius: 10px;
+  position: relative;
+  z-index: 2;
+  transition: color 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+.tab-btn.active { color: var(--ink); }
+.tab-indicator {
+  position: absolute;
+  top: 4px; bottom: 4px;
+  width: calc(50% - 4px);
+  background: var(--bg-card);
+  border-radius: 10px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.35s cubic-bezier(0.4, 0.0, 0.2, 1), background 0.35s;
+  z-index: 1;
+}
+.tab-indicator.condition { transform: translateX(0); background: linear-gradient(135deg, #ffffff 0%, var(--condition-bg) 100%); }
+.tab-indicator.feeling { transform: translateX(100%); background: linear-gradient(135deg, #ffffff 0%, var(--feeling-bg) 100%); }
+.tab-emoji { font-size: 1.1rem; line-height: 1; }
+
+/* コンテンツ */
+.content {
+  flex: 1;
+  padding: 1.5rem 1.2rem 6rem;
+  transition: background 0.4s;
+}
+.content[data-theme="condition"] { background: linear-gradient(180deg, transparent 0%, rgba(123, 164, 124, 0.025) 100%); }
+.content[data-theme="feeling"] { background: linear-gradient(180deg, transparent 0%, rgba(212, 165, 165, 0.025) 100%); }
+
+.content-section { display: none; }
+.content-section.active { display: block; animation: fadeIn 0.3s ease-out; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.section-title {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--ink-faint);
+  letter-spacing: 0.15em;
+  margin-bottom: 0.8rem;
+  text-transform: uppercase;
+  font-family: 'DM Mono', monospace;
+}
+h3.tab-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.3rem; }
+p.tab-desc { font-size: 0.85rem; color: var(--ink-soft); margin-bottom: 1.5rem; }
+
+/* メンバー選択 */
+.member-row {
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 1.2rem;
+  overflow-x: auto;
+  padding: 0.2rem;
+}
+.member-chip {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 24px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.member-chip.active[data-theme="condition"] {
+  border-color: var(--condition);
+  background: var(--condition-bg);
+  color: var(--condition-deep);
+}
+.member-chip.active[data-theme="feeling"] {
+  border-color: var(--feeling);
+  background: var(--feeling-bg);
+  color: var(--feeling-deep);
+}
+.member-emoji { font-size: 1.1rem; }
+
+/* マネージャー: 体調レベル（4択） */
+.condition-level-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-bottom: 1.2rem;
+}
+.condition-level-btn {
+  padding: 0.9rem 0.8rem;
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg-card);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+.condition-level-btn:active { transform: scale(0.96); }
+.condition-level-btn.selected {
+  border-color: var(--condition);
+  background: var(--condition-bg);
+  color: var(--condition-deep);
+}
+.condition-level-emoji { font-size: 1.7rem; line-height: 1; }
+
+/* マネージャー: 食欲メーター */
+.appetite-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.2rem;
+}
+.appetite-btn {
+  padding: 0.7rem 1rem;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-card);
+  font-family: 'Noto Sans JP', sans-serif;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  text-align: left;
+}
+.appetite-btn:active { transform: scale(0.98); }
+.appetite-btn.selected {
+  border-color: var(--condition);
+  background: var(--condition-bg);
+}
+.appetite-emoji { font-size: 1.5rem; line-height: 1; flex-shrink: 0; }
+.appetite-text { display: flex; flex-direction: column; flex: 1; }
+.appetite-label { font-size: 0.95rem; font-weight: 600; }
+.appetite-sub { font-size: 0.75rem; color: var(--ink-soft); }
+
+/* マネージャー: 症状（複数選択チップ） */
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1.2rem;
+}
+.chip {
+  padding: 0.4rem 0.9rem;
+  border: 1.5px solid var(--border);
+  border-radius: 18px;
+  background: var(--bg-card);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.chip:active { transform: scale(0.95); }
+.chip.selected[data-theme="condition"] {
+  border-color: var(--condition);
+  background: var(--condition-light);
+  color: var(--condition-deep);
+}
+
+/* メモ入力 */
+.memo-input {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-card);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.9rem;
+  resize: vertical;
+  min-height: 70px;
+  margin-bottom: 1.2rem;
+}
+.memo-input:focus { outline: none; border-color: var(--gold); }
+
+/* 送信ボタン（マネージャー用） */
+.submit-btn {
+  width: 100%;
+  padding: 1rem;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--condition) 0%, var(--condition-deep) 100%);
+  color: white;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(123, 164, 124, 0.3);
+  transition: transform 0.1s;
+  margin-top: 0.5rem;
+}
+.submit-btn:active { transform: scale(0.98); }
+.submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* スイッチ: ボタングリッド */
+.switch-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem;
+}
+.switch-btn {
+  padding: 1rem 0.8rem;
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg-card);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+.switch-btn:active { transform: scale(0.96); border-color: var(--feeling); background: var(--feeling-bg); }
+.switch-btn-emoji { font-size: 1.6rem; line-height: 1; }
+
+/* ボトムナビ */
+.bottom-nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: rgba(253, 251, 247, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--border);
+  display: flex;
+  padding: 0.5rem 0.5rem calc(0.5rem + env(safe-area-inset-bottom));
+  z-index: 10;
+}
+.nav-btn {
+  flex: 1;
+  padding: 0.6rem 0.4rem;
+  border: none;
+  background: transparent;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--ink-faint);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  transition: color 0.2s;
+}
+.nav-btn.active { color: var(--ink); }
+.nav-btn-icon { font-size: 1.3rem; line-height: 1; }
+
+/* トースト通知 */
+.toast {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-150%);
+  background: var(--ink);
+  color: white;
+  padding: 0.8rem 1.5rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  z-index: 100;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: var(--shadow-md);
+  max-width: 90%;
+  text-align: center;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.condition { background: var(--condition-deep); }
+.toast.feeling { background: var(--feeling-deep); }
+
+/* りれき */
+.history-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  margin-bottom: 0.6rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+}
+.history-emoji { font-size: 1.5rem; line-height: 1.2; }
+.history-content { flex: 1; min-width: 0; }
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.2rem;
+}
+.history-name { font-size: 0.9rem; font-weight: 600; }
+.history-time {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--ink-faint);
+}
+.history-text { font-size: 0.85rem; color: var(--ink-soft); }
+.history-badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  padding: 1px 6px;
+  border-radius: 8px;
+  margin-right: 4px;
+  font-family: 'DM Mono', monospace;
+}
+.history-badge.condition { background: var(--condition-bg); color: var(--condition-deep); }
+.history-badge.feeling { background: var(--feeling-bg); color: var(--feeling-deep); }
+
+/* かんり */
+.kanri-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1rem 1.2rem;
+  margin-bottom: 1rem;
+}
+.kanri-section-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.kanri-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0;
+  border-bottom: 0.5px dashed var(--border);
+}
+.kanri-row:last-child { border-bottom: none; }
+.kanri-status { font-size: 0.85rem; color: var(--ink-soft); }
+.kanri-button {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+  background: white;
+  color: var(--gold);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.kanri-button.danger { border-color: var(--danger); color: var(--danger); }
+.kanri-button.primary { background: var(--ink); border-color: var(--ink); color: white; }
+
+/* メンバー編集行 */
+.member-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0;
+  border-bottom: 0.5px dashed var(--border);
+}
+.member-edit-row:last-child { border-bottom: none; }
+.member-edit-emoji { font-size: 1.5rem; }
+.member-edit-name { flex: 1; font-size: 0.95rem; }
+.member-edit-delete {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: white;
+  color: var(--danger);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.add-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+}
+.add-input {
+  flex: 1;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.9rem;
+}
+.add-input:focus { outline: none; border-color: var(--gold); }
+.add-emoji-input { width: 60px; text-align: center; font-size: 1.1rem; }
+
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--ink-faint);
+  font-size: 0.9rem;
+}
+
+/* 空ステート用の絵文字 */
+.empty-emoji { font-size: 2.5rem; margin-bottom: 0.5rem; opacity: 0.4; }
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+</style>
+</head>
+<body>
+
+<!-- 合言葉画面 -->
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <div class="brand-mark">Kazutan<span class="plus">+</span></div>
+    <div class="brand-sub">Together · Day by Day</div>
+    <div class="gate-title">合言葉を入力</div>
+    <div class="gate-hint">二人だけの合言葉でアプリを開きます</div>
+    <input type="text" class="gate-input" placeholder="ひらがなで入力" id="gateInput" autocomplete="off">
+    <button class="gate-button" onclick="enterApp()">はじめる</button>
+  </div>
+  <div class="gate-footer">CREATED BY YUMA MATSUDO</div>
+</div>
+
+<!-- メインアプリ -->
+<div class="app" id="app">
+  <div class="app-header">
+    <div class="app-header-top">
+      <div class="app-header-brand">Kazutan<span class="plus">+</span></div>
+      <div class="app-header-meta">
+        <span class="sync-dot" id="syncDot"></span>
+        <span id="syncStatus">同期中</span>
+      </div>
+    </div>
+    <div class="tab-switcher" id="tabSwitcher">
+      <div class="tab-indicator condition" id="tabIndicator"></div>
+      <button class="tab-btn active" onclick="switchTopTab('condition')" id="tabCondition">
+        <span class="tab-emoji">🌿</span><span>マネージャー</span>
+      </button>
+      <button class="tab-btn" onclick="switchTopTab('feeling')" id="tabFeeling">
+        <span class="tab-emoji">💕</span><span>スイッチ</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="content" id="content" data-theme="condition">
+
+    <!-- ============================================
+         きろくタブ
+         ============================================ -->
+    <div class="content-section active" id="navRecord">
+
+      <!-- マネージャー: 記録フォーム -->
+      <div id="conditionForm" style="display:block;">
+        <h3 class="tab-title">今日の状態をきろく</h3>
+        <p class="tab-desc">タップで選んで「きろくする」を押してね。</p>
+
+        <div class="section-title">きろくする人</div>
+        <div class="member-row" id="conditionMemberRow"></div>
+
+        <div class="section-title">いまの体調は？</div>
+        <div class="condition-level-grid" id="conditionLevelGrid"></div>
+
+        <div class="section-title">🍚 食欲メーター</div>
+        <div class="appetite-row" id="appetiteRow"></div>
+
+        <div class="section-title">症状（複数選べます）</div>
+        <div class="chip-row" id="symptomChips"></div>
+
+        <div class="section-title">食事タイミング</div>
+        <div class="chip-row" id="mealChips"></div>
+
+        <div class="section-title">📝 メモ</div>
+        <textarea class="memo-input" id="conditionMemo" placeholder="今日どんな一日だったか、気になること、なんでも"></textarea>
+
+        <button class="submit-btn" onclick="submitCondition()">きろくする</button>
+      </div>
+
+      <!-- スイッチ: ボタンタップ送信 -->
+      <div id="feelingForm" style="display:none;">
+        <h3 class="tab-title">気持ちをおくる</h3>
+        <p class="tab-desc">ボタン1つで相手のスマホへ。</p>
+
+        <div class="section-title">送信者</div>
+        <div class="member-row" id="feelingMemberRow"></div>
+
+        <div class="section-title">伝えたい気持ち</div>
+        <div class="switch-grid" id="switchGrid"></div>
+      </div>
+    </div>
+
+    <!-- ============================================
+         りれきタブ
+         ============================================ -->
+    <div class="content-section" id="navHistory">
+      <h3 class="tab-title">りれき</h3>
+      <p class="tab-desc">マネージャーとスイッチの記録一覧</p>
+      <div id="historyList"></div>
+    </div>
+
+    <!-- ============================================
+         ぶんせきタブ（ベース版では省略 - 後実装）
+         ============================================ -->
+    <div class="content-section" id="navAnalysis">
+      <h3 class="tab-title">ぶんせき</h3>
+      <p class="tab-desc">記録のパターンを可視化</p>
+      <div class="empty-state">
+        <div class="empty-emoji">📊</div>
+        <p>分析機能は次のバージョンで実装予定です。</p>
+      </div>
+    </div>
+
+    <!-- ============================================
+         かんりタブ
+         ============================================ -->
+    <div class="content-section" id="navSettings">
+      <h3 class="tab-title">かんり</h3>
+      <p class="tab-desc">メンバー・通知の設定</p>
+
+      <!-- 通知 -->
+      <div class="kanri-section">
+        <div class="kanri-section-title">🔔 プッシュ通知</div>
+        <div class="kanri-row">
+          <span class="kanri-status" id="notifyStatus">未設定</span>
+          <button class="kanri-button primary" id="notifyBtn" onclick="enableNotification()">通知を有効にする</button>
+        </div>
+      </div>
+
+      <!-- メンバー管理 -->
+      <div class="kanri-section">
+        <div class="kanri-section-title">👥 メンバー</div>
+        <div id="memberEditList"></div>
+        <div class="add-form">
+          <input class="add-input add-emoji-input" id="newMemberEmoji" placeholder="🐰" maxlength="2">
+          <input class="add-input" id="newMemberName" placeholder="名前">
+          <button class="kanri-button primary" onclick="addMember()">追加</button>
+        </div>
+      </div>
+
+      <!-- スイッチボタン管理 -->
+      <div class="kanri-section">
+        <div class="kanri-section-title">💕 スイッチのボタン</div>
+        <div id="switchEditList"></div>
+        <div class="add-form">
+          <input class="add-input add-emoji-input" id="newSwitchEmoji" placeholder="✨" maxlength="2">
+          <input class="add-input" id="newSwitchLabel" placeholder="ラベル">
+          <button class="kanri-button primary" onclick="addSwitchButton()">追加</button>
+        </div>
+      </div>
+
+      <!-- 情報 -->
+      <div class="kanri-section">
+        <div class="kanri-section-title">ℹ️ 情報</div>
+        <div class="kanri-row">
+          <span class="kanri-status">バージョン</span>
+          <span class="kanri-status">v1.0.0</span>
+        </div>
+        <div class="kanri-row">
+          <span class="kanri-status">合言葉</span>
+          <span class="kanri-status" style="font-family: 'DM Mono', monospace;">みちくん</span>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ボトムナビ -->
+  <div class="bottom-nav">
+    <button class="nav-btn active" onclick="switchBottomNav('Record')" data-nav="Record">
+      <span class="nav-btn-icon">✏️</span><span>きろく</span>
+    </button>
+    <button class="nav-btn" onclick="switchBottomNav('History')" data-nav="History">
+      <span class="nav-btn-icon">📜</span><span>りれき</span>
+    </button>
+    <button class="nav-btn" onclick="switchBottomNav('Analysis')" data-nav="Analysis">
+      <span class="nav-btn-icon">📊</span><span>ぶんせき</span>
+    </button>
+    <button class="nav-btn" onclick="switchBottomNav('Settings')" data-nav="Settings">
+      <span class="nav-btn-icon">⚙️</span><span>かんり</span>
+    </button>
+  </div>
+</div>
+
+<!-- トースト -->
+<div class="toast" id="toast"></div>
+
+<!-- ============================================
+     Firebase SDK
+     ============================================ -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
+
+<script>
+// ============================================
+// Firebase 設定
+// ============================================
+const firebaseConfig = {
+  apiKey: "AIzaSyAe44e1VKvd-NmlhD0JnJmqQwi9IlB7Rek",
+  authDomain: "kazutan-plus.firebaseapp.com",
+  databaseURL: "https://kazutan-plus-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "kazutan-plus",
+  storageBucket: "kazutan-plus.firebasestorage.app",
+  messagingSenderId: "468532340608",
+  appId: "1:468532340608:web:32c86b4343bfe165e80365"
+};
+const VAPID_KEY = "BGDr6HckO3mfwhD1QRPCc2y91MR3277UtjyJW-E6G9cc1fF_VO3GLgZPAmbCzgeIy4YOt852HcDj1v_zeFn1lJ0";
+const PASSPHRASE = "みちくん";
+const DB_ROOT = "kazutan-plus";
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const messaging = firebase.messaging();
+
+// ============================================
+// 状態管理
+// ============================================
+let state = {
+  members: [],
+  switches: [],
+  records: [],
+  selectedConditionMemberId: null,
+  selectedFeelingMemberId: null,
+  // マネージャー入力中の値
+  conditionLevel: null,
+  appetite: null,
+  symptoms: [],
+  mealTimings: [],
+};
+
+// ============================================
+// 初期データ（旧アプリ準拠）
+// ============================================
+const DEFAULT_MEMBERS = [
+  {id: "m1", name: "ゆうま", emoji: "🐰"},
+  {id: "m2", name: "みち", emoji: "🌸"},
+];
+const CONDITION_LEVELS = [
+  {id: "good", label: "元気", emoji: "☀️"},
+  {id: "ok", label: "まあまあ", emoji: "🌥"},
+  {id: "bad", label: "わるい", emoji: "🌧"},
+  {id: "terrible", label: "つらい", emoji: "🌪"},
+];
+const APPETITE_LEVELS = [
+  {id: "great", label: "超いい", emoji: "🍜", sub: "ラーメン求"},
+  {id: "normal", label: "ふつう", emoji: "🍙", sub: "普通に米食えそう"},
+  {id: "low", label: "びわる", emoji: "😶", sub: "米ちょい険しいかも"},
+  {id: "none", label: "きょくわる", emoji: "🛌", sub: "米はむりだぁ"},
+];
+const SYMPTOMS = ["頭痛", "腹痛", "お腹パンパン", "ゲップ", "吐き気", "めまい", "だるい", "眠気", "不安", "生理"];
+const MEAL_TIMINGS = ["食前", "食後", "空腹", "関係なし"];
+const DEFAULT_SWITCHES = [
+  {id: "s1", label: "会いたい", emoji: "💕"},
+  {id: "s2", label: "寂しい", emoji: "🥺"},
+  {id: "s3", label: "疲れた", emoji: "😪"},
+  {id: "s4", label: "ありがとう", emoji: "🙏"},
+  {id: "s5", label: "おやすみ", emoji: "🌙"},
+  {id: "s6", label: "ぎゅーしたい", emoji: "🤗"},
+  {id: "s7", label: "おかえり", emoji: "🏠"},
+  {id: "s8", label: "殺すぞ", emoji: "🫶"},
+];
+
+// ============================================
+// 合言葉ゲート
+// ============================================
+const PASS_KEY = "kazutan-plus-pass-v1";
+function enterApp() {
+  const val = document.getElementById("gateInput").value.trim();
+  if (val === PASSPHRASE) {
+    localStorage.setItem(PASS_KEY, "1");
+    showApp();
+  } else {
+    const input = document.getElementById("gateInput");
+    input.style.borderColor = "var(--danger)";
+    input.style.animation = "shake 0.4s";
+    setTimeout(() => { input.style.animation = ""; }, 400);
+  }
+}
+document.getElementById("gateInput").addEventListener("keypress", (e) => {
+  if (e.key === "Enter") enterApp();
+});
+
+function showApp() {
+  document.getElementById("gate").classList.add("hidden");
+  document.getElementById("app").classList.add("active");
+  initApp();
+}
+
+// 初回チェック: 合言葉が既に入力済みなら自動で進む
+if (localStorage.getItem(PASS_KEY) === "1") {
+  showApp();
+}
+
+// ============================================
+// 上タブ切替
+// ============================================
+let currentTopTab = "condition"; // "condition" or "feeling"
+function switchTopTab(tab) {
+  currentTopTab = tab;
+  const indicator = document.getElementById("tabIndicator");
+  const content = document.getElementById("content");
+  indicator.className = "tab-indicator " + tab;
+  content.dataset.theme = tab;
+  document.getElementById("tabCondition").classList.toggle("active", tab === "condition");
+  document.getElementById("tabFeeling").classList.toggle("active", tab === "feeling");
+
+  // きろくタブ内のフォームも切替
+  document.getElementById("conditionForm").style.display = tab === "condition" ? "block" : "none";
+  document.getElementById("feelingForm").style.display = tab === "feeling" ? "block" : "none";
+}
+
+// ============================================
+// ボトムナビ切替
+// ============================================
+function switchBottomNav(name) {
+  document.querySelectorAll(".content-section").forEach(s => s.classList.remove("active"));
+  document.getElementById("nav" + name).classList.add("active");
+  document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+  document.querySelector(`[data-nav="${name}"]`).classList.add("active");
+
+  // タブ切替時に応じて再描画
+  if (name === "History") renderHistory();
+  if (name === "Settings") renderKanri();
+}
+
+// ============================================
+// アプリ初期化（Firebase接続）
+// ============================================
+async function initApp() {
+  // メンバー取得
+  db.ref(`${DB_ROOT}/members`).on("value", (snap) => {
+    const data = snap.val();
+    if (!data) {
+      // 初回: デフォルトメンバーを書き込む
+      const init = {};
+      DEFAULT_MEMBERS.forEach(m => { init[m.id] = m; });
+      db.ref(`${DB_ROOT}/members`).set(init);
+      state.members = DEFAULT_MEMBERS;
+    } else {
+      state.members = Object.values(data);
+    }
+    renderMemberRows();
+    renderKanri();
+  });
+
+  // スイッチボタン取得
+  db.ref(`${DB_ROOT}/switches`).on("value", (snap) => {
+    const data = snap.val();
+    if (!data) {
+      const init = {};
+      DEFAULT_SWITCHES.forEach(s => { init[s.id] = s; });
+      db.ref(`${DB_ROOT}/switches`).set(init);
+      state.switches = DEFAULT_SWITCHES;
+    } else {
+      state.switches = Object.values(data);
+    }
+    renderSwitchGrid();
+    renderKanri();
+  });
+
+  // 記録取得（最新50件）
+  db.ref(`${DB_ROOT}/records`).orderByChild("timestamp").limitToLast(100).on("value", (snap) => {
+    const data = snap.val();
+    state.records = data ? Object.values(data).sort((a, b) => b.timestamp - a.timestamp) : [];
+    renderHistory();
+  });
+
+  // 接続状態
+  db.ref(".info/connected").on("value", (snap) => {
+    const connected = snap.val();
+    document.getElementById("syncDot").classList.toggle("offline", !connected);
+    document.getElementById("syncStatus").textContent = connected ? "同期中" : "オフライン";
+  });
+
+  // 静的UI生成
+  renderConditionLevels();
+  renderAppetiteRow();
+  renderSymptomChips();
+  renderMealChips();
+
+  // 通知トークン状態確認
+  updateNotifyStatus();
+
+  // ServiceWorker登録
+  if ("serviceWorker" in navigator) {
+    try {
+      const reg = await navigator.serviceWorker.register("./firebase-messaging-sw.js");
+      console.log("SW registered:", reg.scope);
+    } catch (e) {
+      console.error("SW registration failed:", e);
+    }
+  }
+}
+
+// ============================================
+// レンダリング: メンバー選択行
+// ============================================
+function renderMemberRows() {
+  ["condition", "feeling"].forEach(theme => {
+    const row = document.getElementById(`${theme}MemberRow`);
+    row.innerHTML = "";
+    state.members.forEach(m => {
+      const chip = document.createElement("div");
+      chip.className = "member-chip";
+      chip.dataset.theme = theme;
+      const stateKey = theme === "condition" ? "selectedConditionMemberId" : "selectedFeelingMemberId";
+      // デフォルト最初のメンバー
+      if (!state[stateKey] && state.members[0]) state[stateKey] = state.members[0].id;
+      if (state[stateKey] === m.id) chip.classList.add("active");
+      chip.innerHTML = `<span class="member-emoji">${m.emoji}</span><span>${escapeHtml(m.name)}</span>`;
+      chip.onclick = () => {
+        state[stateKey] = m.id;
+        renderMemberRows();
+      };
+      row.appendChild(chip);
+    });
+  });
+}
+
+// ============================================
+// レンダリング: マネージャー UI
+// ============================================
+function renderConditionLevels() {
+  const grid = document.getElementById("conditionLevelGrid");
+  grid.innerHTML = "";
+  CONDITION_LEVELS.forEach(lv => {
+    const btn = document.createElement("button");
+    btn.className = "condition-level-btn";
+    if (state.conditionLevel === lv.id) btn.classList.add("selected");
+    btn.innerHTML = `<span class="condition-level-emoji">${lv.emoji}</span><span>${lv.label}</span>`;
+    btn.onclick = () => {
+      state.conditionLevel = lv.id;
+      renderConditionLevels();
+    };
+    grid.appendChild(btn);
+  });
+}
+
+function renderAppetiteRow() {
+  const row = document.getElementById("appetiteRow");
+  row.innerHTML = "";
+  APPETITE_LEVELS.forEach(ap => {
+    const btn = document.createElement("button");
+    btn.className = "appetite-btn";
+    if (state.appetite === ap.id) btn.classList.add("selected");
+    btn.innerHTML = `
+      <span class="appetite-emoji">${ap.emoji}</span>
+      <div class="appetite-text">
+        <div class="appetite-label">${ap.label}</div>
+        <div class="appetite-sub">${ap.sub}</div>
+      </div>
+    `;
+    btn.onclick = () => {
+      state.appetite = ap.id;
+      renderAppetiteRow();
+    };
+    row.appendChild(btn);
+  });
+}
+
+function renderSymptomChips() {
+  const row = document.getElementById("symptomChips");
+  row.innerHTML = "";
+  SYMPTOMS.forEach(sym => {
+    const chip = document.createElement("div");
+    chip.className = "chip";
+    chip.dataset.theme = "condition";
+    if (state.symptoms.includes(sym)) chip.classList.add("selected");
+    chip.textContent = sym;
+    chip.onclick = () => {
+      const idx = state.symptoms.indexOf(sym);
+      if (idx >= 0) state.symptoms.splice(idx, 1);
+      else state.symptoms.push(sym);
+      renderSymptomChips();
+    };
+    row.appendChild(chip);
+  });
+}
+
+function renderMealChips() {
+  const row = document.getElementById("mealChips");
+  row.innerHTML = "";
+  MEAL_TIMINGS.forEach(meal => {
+    const chip = document.createElement("div");
+    chip.className = "chip";
+    chip.dataset.theme = "condition";
+    if (state.mealTimings.includes(meal)) chip.classList.add("selected");
+    chip.textContent = meal;
+    chip.onclick = () => {
+      const idx = state.mealTimings.indexOf(meal);
+      if (idx >= 0) state.mealTimings.splice(idx, 1);
+      else state.mealTimings.push(meal);
+      renderMealChips();
+    };
+    row.appendChild(chip);
+  });
+}
+
+// ============================================
+// レンダリング: スイッチグリッド
+// ============================================
+function renderSwitchGrid() {
+  const grid = document.getElementById("switchGrid");
+  if (!grid) return;
+  grid.innerHTML = "";
+  state.switches.forEach(s => {
+    const btn = document.createElement("button");
+    btn.className = "switch-btn";
+    btn.innerHTML = `<span class="switch-btn-emoji">${s.emoji}</span><span>${escapeHtml(s.label)}</span>`;
+    btn.onclick = () => sendSwitch(s);
+    grid.appendChild(btn);
+  });
+}
+
+// ============================================
+// 記録送信: マネージャー
+// ============================================
+function submitCondition() {
+  if (!state.conditionLevel) {
+    showToast("体調を選んでください", "condition");
+    return;
+  }
+  const member = state.members.find(m => m.id === state.selectedConditionMemberId);
+  if (!member) {
+    showToast("メンバーを選んでください", "condition");
+    return;
+  }
+  const level = CONDITION_LEVELS.find(l => l.id === state.conditionLevel);
+  const appetite = state.appetite ? APPETITE_LEVELS.find(a => a.id === state.appetite) : null;
+  const memo = document.getElementById("conditionMemo").value.trim();
+
+  // 通知用テキスト
+  let content = `${level.label}`;
+  if (appetite) content += ` / 食欲: ${appetite.label}`;
+  if (state.symptoms.length > 0) content += ` / ${state.symptoms.join("・")}`;
+
+  const record = {
+    type: "condition",
+    senderId: member.id,
+    senderName: member.name,
+    senderEmoji: member.emoji,
+    emoji: level.emoji,
+    content: content,
+    detail: {
+      level: state.conditionLevel,
+      appetite: state.appetite,
+      symptoms: state.symptoms,
+      mealTimings: state.mealTimings,
+      memo: memo,
+    },
+    timestamp: Date.now(),
+  };
+
+  db.ref(`${DB_ROOT}/records`).push(record).then(() => {
+    showToast(`${level.emoji} きろくしました`, "condition");
+    // リセット
+    state.conditionLevel = null;
+    state.appetite = null;
+    state.symptoms = [];
+    state.mealTimings = [];
+    document.getElementById("conditionMemo").value = "";
+    renderConditionLevels();
+    renderAppetiteRow();
+    renderSymptomChips();
+    renderMealChips();
+  }).catch(err => {
+    console.error(err);
+    showToast("送信エラー", "condition");
+  });
+}
+
+// ============================================
+// 記録送信: スイッチ
+// ============================================
+function sendSwitch(switchItem) {
+  const member = state.members.find(m => m.id === state.selectedFeelingMemberId);
+  if (!member) {
+    showToast("メンバーを選んでください", "feeling");
+    return;
+  }
+  const record = {
+    type: "switch",
+    senderId: member.id,
+    senderName: member.name,
+    senderEmoji: member.emoji,
+    emoji: switchItem.emoji,
+    content: switchItem.label,
+    timestamp: Date.now(),
+  };
+  db.ref(`${DB_ROOT}/records`).push(record).then(() => {
+    showToast(`${switchItem.emoji} ${switchItem.label} を送信しました`, "feeling");
+  }).catch(err => {
+    console.error(err);
+    showToast("送信エラー", "feeling");
+  });
+}
+
+// ============================================
+// りれき表示
+// ============================================
+function renderHistory() {
+  const list = document.getElementById("historyList");
+  if (!list) return;
+  if (state.records.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-emoji">📭</div><p>まだ記録がありません</p></div>`;
+    return;
+  }
+  list.innerHTML = "";
+  state.records.forEach(r => {
+    const item = document.createElement("div");
+    item.className = "history-item";
+    const typeBadge = r.type === "condition"
+      ? `<span class="history-badge condition">マネージャー</span>`
+      : `<span class="history-badge feeling">スイッチ</span>`;
+    item.innerHTML = `
+      <div class="history-emoji">${r.emoji || "📝"}</div>
+      <div class="history-content">
+        <div class="history-header">
+          <div class="history-name">${escapeHtml(r.senderEmoji || "")} ${escapeHtml(r.senderName || "?")}</div>
+          <div class="history-time">${formatTime(r.timestamp)}</div>
+        </div>
+        <div class="history-text">${typeBadge}${escapeHtml(r.content || "")}</div>
+        ${r.detail && r.detail.memo ? `<div class="history-text" style="margin-top:4px; opacity:0.7;">📝 ${escapeHtml(r.detail.memo)}</div>` : ""}
+      </div>
+    `;
+    list.appendChild(item);
+  });
+}
+
+// ============================================
+// かんり表示
+// ============================================
+function renderKanri() {
+  // メンバー編集
+  const memberList = document.getElementById("memberEditList");
+  if (memberList) {
+    memberList.innerHTML = "";
+    state.members.forEach(m => {
+      const row = document.createElement("div");
+      row.className = "member-edit-row";
+      row.innerHTML = `
+        <span class="member-edit-emoji">${m.emoji}</span>
+        <span class="member-edit-name">${escapeHtml(m.name)}</span>
+        <button class="member-edit-delete" onclick="deleteMember('${m.id}')">×</button>
+      `;
+      memberList.appendChild(row);
+    });
+  }
+
+  // スイッチボタン編集
+  const switchList = document.getElementById("switchEditList");
+  if (switchList) {
+    switchList.innerHTML = "";
+    state.switches.forEach(s => {
+      const row = document.createElement("div");
+      row.className = "member-edit-row";
+      row.innerHTML = `
+        <span class="member-edit-emoji">${s.emoji}</span>
+        <span class="member-edit-name">${escapeHtml(s.label)}</span>
+        <button class="member-edit-delete" onclick="deleteSwitchButton('${s.id}')">×</button>
+      `;
+      switchList.appendChild(row);
+    });
+  }
+}
+
+// メンバー追加・削除
+function addMember() {
+  const emoji = document.getElementById("newMemberEmoji").value.trim() || "👤";
+  const name = document.getElementById("newMemberName").value.trim();
+  if (!name) { showToast("名前を入力してください"); return; }
+  const id = "m" + Date.now();
+  db.ref(`${DB_ROOT}/members/${id}`).set({id, name, emoji});
+  document.getElementById("newMemberEmoji").value = "";
+  document.getElementById("newMemberName").value = "";
+}
+function deleteMember(id) {
+  if (!confirm("このメンバーを削除しますか？")) return;
+  db.ref(`${DB_ROOT}/members/${id}`).remove();
+}
+
+// スイッチボタン追加・削除
+function addSwitchButton() {
+  const emoji = document.getElementById("newSwitchEmoji").value.trim() || "✨";
+  const label = document.getElementById("newSwitchLabel").value.trim();
+  if (!label) { showToast("ラベルを入力してください"); return; }
+  const id = "s" + Date.now();
+  db.ref(`${DB_ROOT}/switches/${id}`).set({id, label, emoji});
+  document.getElementById("newSwitchEmoji").value = "";
+  document.getElementById("newSwitchLabel").value = "";
+}
+function deleteSwitchButton(id) {
+  if (!confirm("このボタンを削除しますか？")) return;
+  db.ref(`${DB_ROOT}/switches/${id}`).remove();
+}
+
+// ============================================
+// 通知設定
+// ============================================
+async function updateNotifyStatus() {
+  const status = Notification.permission;
+  const statusEl = document.getElementById("notifyStatus");
+  const btnEl = document.getElementById("notifyBtn");
+  if (!statusEl) return;
+
+  if (status === "granted") {
+    statusEl.textContent = "✅ 有効";
+    btnEl.textContent = "再登録";
+  } else if (status === "denied") {
+    statusEl.textContent = "❌ ブロック中";
+    btnEl.textContent = "ブラウザ設定で許可";
+    btnEl.disabled = true;
+  } else {
+    statusEl.textContent = "未設定";
+    btnEl.textContent = "通知を有効にする";
+  }
+}
+
+async function enableNotification() {
+  const member = state.members.find(m => m.id === state.selectedConditionMemberId)
+              || state.members.find(m => m.id === state.selectedFeelingMemberId)
+              || state.members[0];
+
+  if (!member) {
+    showToast("先にメンバーを追加してください");
+    return;
+  }
+
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") {
+      showToast("通知が許可されませんでした");
+      return;
+    }
+
+    // SW登録
+    const swReg = await navigator.serviceWorker.ready;
+
+    // FCMトークン取得
+    const token = await messaging.getToken({
+      vapidKey: VAPID_KEY,
+      serviceWorkerRegistration: swReg,
+    });
+
+    if (!token) {
+      showToast("トークン取得に失敗");
+      return;
+    }
+
+    // トークンをDBに保存（メンバーIDの下に、デバイスID別に）
+    const deviceId = "d" + (localStorage.getItem("device-id") || (() => {
+      const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+      localStorage.setItem("device-id", id);
+      return id;
+    })());
+    await db.ref(`${DB_ROOT}/tokens/${member.id}/${deviceId}`).set({
+      token: token,
+      updatedAt: Date.now(),
+      memberName: member.name,
+    });
+
+    showToast("✅ 通知を有効にしました");
+    updateNotifyStatus();
+  } catch (err) {
+    console.error(err);
+    showToast("通知の設定に失敗: " + err.message);
+  }
+}
+
+// フォアグラウンド通知
+messaging.onMessage((payload) => {
+  console.log("Foreground message:", payload);
+  const title = payload.notification?.title || "Kazutan+";
+  const body = payload.notification?.body || "";
+  showToast(`${title}\n${body}`);
+});
+
+// ============================================
+// ヘルパー
+// ============================================
+function showToast(msg, theme) {
+  const toast = document.getElementById("toast");
+  toast.textContent = msg;
+  toast.className = "toast show" + (theme ? " " + theme : "");
+  setTimeout(() => { toast.classList.remove("show"); }, 2500);
+}
+
+function escapeHtml(s) {
+  if (!s) return "";
+  return String(s).replace(/[&<>"']/g, c => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[c]));
+}
+
+function formatTime(ts) {
+  if (!ts) return "";
+  const d = new Date(ts);
+  const now = new Date();
+  const diffMs = now - d;
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return "たった今";
+  if (diffMin < 60) return `${diffMin}分前`;
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) return `${diffHour}時間前`;
+  const diffDay = Math.floor(diffHour / 24);
+  if (diffDay < 7) return `${diffDay}日前`;
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+</script>
+
+</body>
+</html>
