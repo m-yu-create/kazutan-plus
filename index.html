@@ -432,6 +432,19 @@ p.tab-desc { font-size: 0.85rem; color: var(--ink-soft); margin-bottom: 1.5rem; 
 }
 .switch-btn:active { transform: scale(0.96); border-color: var(--feeling); background: var(--feeling-bg); }
 .switch-btn-emoji { font-size: 1.6rem; line-height: 1; }
+.switch-btn-count {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--feeling-deep);
+  background: var(--feeling-bg);
+  padding: 1px 5px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+.switch-btn { position: relative; }
 
 /* ボトムナビ */
 .bottom-nav {
@@ -1131,7 +1144,7 @@ let state = {
   symptomsList: [],  // 症状リスト（DB管理）
   selectedConditionMemberId: null,
   selectedFeelingMemberId: null,
-  deviceOwnerId: null,  // この端末は誰のスマホか
+  deviceOwnerId: localStorage.getItem("kazutan-plus-device-owner") || null,  // この端末は誰のスマホか
   // マネージャー入力中の値
   conditionLevel: null,
   appetite: null,
@@ -1291,6 +1304,7 @@ async function initApp() {
     });
     state.records = records.sort((a, b) => b.timestamp - a.timestamp);
     renderHistory();
+    renderSwitchGrid();  // 新しい記録が反映されたら頻度ソート再計算
     if (document.getElementById("navAnalysis").classList.contains("active")) {
       renderAnalysis();
     }
@@ -1335,13 +1349,21 @@ function renderMemberRows() {
       chip.className = "member-chip";
       chip.dataset.theme = theme;
       const stateKey = theme === "condition" ? "selectedConditionMemberId" : "selectedFeelingMemberId";
-      // デフォルト最初のメンバー
-      if (!state[stateKey] && state.members[0]) state[stateKey] = state.members[0].id;
+      // デフォルト: deviceOwnerIdが設定されていれば自分。なければ最初のメンバー
+      if (!state[stateKey]) {
+        if (state.deviceOwnerId && state.members.find(mm => mm.id === state.deviceOwnerId)) {
+          state[stateKey] = state.deviceOwnerId;
+        } else if (state.members[0]) {
+          state[stateKey] = state.members[0].id;
+        }
+      }
       if (state[stateKey] === m.id) chip.classList.add("active");
       chip.innerHTML = `<span class="member-emoji">${m.emoji}</span><span>${escapeHtml(m.name)}</span>`;
       chip.onclick = () => {
         state[stateKey] = m.id;
         renderMemberRows();
+        // スイッチタブで送信者が変わったらボタンを再ソート
+        if (theme === "feeling") renderSwitchGrid();
       };
       row.appendChild(chip);
     });
@@ -1456,10 +1478,38 @@ function renderSwitchGrid() {
   const grid = document.getElementById("switchGrid");
   if (!grid) return;
   grid.innerHTML = "";
-  state.switches.forEach(s => {
+
+  // 直近30日・選択中の送信者の使用頻度を集計
+  const senderId = state.selectedFeelingMemberId;
+  const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000; // 30日前
+
+  const useCount = {};
+  if (senderId) {
+    state.records.forEach(r => {
+      if (r.type !== "switch") return;
+      if (r.senderId !== senderId) return;
+      if (!r.timestamp || r.timestamp < cutoff) return;
+      // ボタンの判定: contentでマッチング（IDが移行で変わるため）
+      const key = r.content;
+      useCount[key] = (useCount[key] || 0) + 1;
+    });
+  }
+
+  // ボタンに使用回数を付けてソート
+  const sorted = state.switches.slice().sort((a, b) => {
+    const aCount = useCount[a.label] || 0;
+    const bCount = useCount[b.label] || 0;
+    if (bCount !== aCount) return bCount - aCount;  // 多い順
+    // 同数なら元の順序を保つ
+    return state.switches.indexOf(a) - state.switches.indexOf(b);
+  });
+
+  sorted.forEach(s => {
     const btn = document.createElement("button");
     btn.className = "switch-btn";
-    btn.innerHTML = `<span class="switch-btn-emoji">${s.emoji}</span><span>${escapeHtml(s.label)}</span>`;
+    const cnt = useCount[s.label] || 0;
+    const badge = cnt > 0 ? `<span class="switch-btn-count">${cnt}</span>` : "";
+    btn.innerHTML = `${badge}<span class="switch-btn-emoji">${s.emoji}</span><span>${escapeHtml(s.label)}</span>`;
     btn.onclick = () => sendSwitch(s);
     grid.appendChild(btn);
   });
