@@ -1157,13 +1157,11 @@ const DEFAULT_SWITCHES = [
 ];
 
 // ============================================
-// 合言葉ゲート
+// 合言葉ゲート（毎回入力）
 // ============================================
-const PASS_KEY = "kazutan-plus-pass-v1";
 function enterApp() {
   const val = document.getElementById("gateInput").value.trim();
   if (val === PASSPHRASE) {
-    localStorage.setItem(PASS_KEY, "1");
     showApp();
   } else {
     const input = document.getElementById("gateInput");
@@ -1180,11 +1178,6 @@ function showApp() {
   document.getElementById("gate").classList.add("hidden");
   document.getElementById("app").classList.add("active");
   initApp();
-}
-
-// 初回チェック: 合言葉が既に入力済みなら自動で進む
-if (localStorage.getItem(PASS_KEY) === "1") {
-  showApp();
 }
 
 // ============================================
