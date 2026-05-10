@@ -738,6 +738,29 @@ p.tab-desc { font-size: 0.85rem; color: var(--ink-soft); margin-bottom: 1.5rem; 
 .history-badge.condition { background: var(--condition-bg); color: var(--condition-deep); }
 .history-badge.feeling { background: var(--feeling-bg); color: var(--feeling-deep); }
 
+.history-meta {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--ink-faint);
+  margin-top: 0.4rem;
+}
+.history-actions {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+.history-action-btn {
+  padding: 0.25rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: white;
+  font-family: inherit;
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.history-action-btn.delete:hover { border-color: var(--danger); color: var(--danger); }
+
 /* かんり */
 .kanri-section {
   background: var(--bg-card);
@@ -1258,9 +1281,19 @@ async function initApp() {
 
   // 記録取得（最新50件）
   db.ref(`${DB_ROOT}/records`).orderByChild("timestamp").limitToLast(100).on("value", (snap) => {
-    const data = snap.val();
-    state.records = data ? Object.values(data).sort((a, b) => b.timestamp - a.timestamp) : [];
+    const records = [];
+    snap.forEach(child => {
+      const r = child.val();
+      if (r) {
+        r._key = child.key;  // 削除・編集用にキーを保持
+        records.push(r);
+      }
+    });
+    state.records = records.sort((a, b) => b.timestamp - a.timestamp);
     renderHistory();
+    if (document.getElementById("navAnalysis").classList.contains("active")) {
+      renderAnalysis();
+    }
   });
 
   // 接続状態
@@ -1576,13 +1609,28 @@ function renderHistory() {
       <div class="history-content">
         <div class="history-header">
           <div class="history-name">${escapeHtml(r.senderEmoji || "")} ${escapeHtml(r.senderName || "?")}</div>
-          <div class="history-time">${formatTime(r.timestamp)}</div>
+          <div class="history-time" title="${formatFullTime(r.timestamp)}">${formatTime(r.timestamp)}</div>
         </div>
         <div class="history-text">${typeBadge}${escapeHtml(r.content || "")}</div>
         ${r.detail && r.detail.memo ? `<div class="history-text" style="margin-top:4px; opacity:0.7;">📝 ${escapeHtml(r.detail.memo)}</div>` : ""}
+        <div class="history-meta">${formatFullTime(r.timestamp)}</div>
+        <div class="history-actions">
+          <button class="history-action-btn delete" onclick="deleteRecord('${r._key || ''}')">🗑 削除</button>
+        </div>
       </div>
     `;
     list.appendChild(item);
+  });
+}
+
+function deleteRecord(key) {
+  if (!key) { showToast("キーが取得できませんでした"); return; }
+  if (!confirm("この記録を削除しますか？")) return;
+  db.ref(`${DB_ROOT}/records/${key}`).remove().then(() => {
+    showToast("削除しました");
+  }).catch(err => {
+    console.error(err);
+    showToast("削除エラー");
   });
 }
 
@@ -1833,6 +1881,18 @@ function formatTime(ts) {
   const diffDay = Math.floor(diffHour / 24);
   if (diffDay < 7) return `${diffDay}日前`;
   return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+function formatFullTime(ts) {
+  if (!ts) return "";
+  const d = new Date(ts);
+  const y = d.getFullYear();
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  const h = String(d.getHours()).padStart(2, "0");
+  const min = String(d.getMinutes()).padStart(2, "0");
+  const dows = ["日","月","火","水","木","金","土"];
+  return `${y}/${m}/${day}(${dows[d.getDay()]}) ${h}:${min}`;
 }
 
 // ============================================
