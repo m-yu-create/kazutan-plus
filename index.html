@@ -1292,8 +1292,8 @@ async function initApp() {
     renderKanri();
   });
 
-  // 記録取得（最新50件）
-  db.ref(`${DB_ROOT}/records`).orderByChild("timestamp").limitToLast(100).on("value", (snap) => {
+  // 記録取得（全件・時系列順）
+  db.ref(`${DB_ROOT}/records`).orderByChild("timestamp").on("value", (snap) => {
     const records = [];
     snap.forEach(child => {
       const r = child.val();
@@ -1334,6 +1334,61 @@ async function initApp() {
     } catch (e) {
       console.error("SW registration failed:", e);
     }
+  }
+
+  // 通知トークンの自動更新（既に許可済みのときだけ）
+  // ※メンバーデータが読み込まれてから実行するため少し遅延
+  setTimeout(autoRefreshTokenIfNeeded, 1500);
+}
+
+// 通知トークンの自動更新
+// 既に通知が有効化されている端末で、アプリを開くたびにトークンをリフレッシュ
+async function autoRefreshTokenIfNeeded() {
+  // 通知が許可されていない端末ではスキップ
+  if (Notification.permission !== "granted") {
+    console.log("[token] notification not granted, skip refresh");
+    return;
+  }
+  // デバイスオーナーが設定されていない端末ではスキップ
+  if (!state.deviceOwnerId) {
+    console.log("[token] device owner not set, skip refresh");
+    return;
+  }
+  // メンバーが見つからない端末ではスキップ
+  const member = state.members.find(m => m.id === state.deviceOwnerId);
+  if (!member) {
+    console.log("[token] device owner member not found, skip refresh");
+    return;
+  }
+
+  try {
+    const swReg = await navigator.serviceWorker.ready;
+    const token = await messaging.getToken({
+      vapidKey: VAPID_KEY,
+      serviceWorkerRegistration: swReg,
+    });
+    if (!token) {
+      console.warn("[token] could not get FCM token");
+      return;
+    }
+
+    // デバイスIDを取得（既存があればそれを使う）
+    let deviceId = localStorage.getItem("kazutan-plus-device-id");
+    if (!deviceId) {
+      deviceId = "d" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+      localStorage.setItem("kazutan-plus-device-id", deviceId);
+    }
+
+    // 最新トークンをDBに書き込み
+    await db.ref(`${DB_ROOT}/tokens/${member.id}/${deviceId}`).set({
+      token: token,
+      updatedAt: Date.now(),
+      memberName: member.name,
+    });
+    console.log("[token] refreshed for", member.name);
+    updateNotifyStatus();
+  } catch (err) {
+    console.error("[token] auto refresh failed:", err);
   }
 }
 
@@ -1828,7 +1883,27 @@ async function updateNotifyStatus() {
   if (!statusEl) return;
 
   if (status === "granted") {
-    statusEl.textContent = "✅ 有効";
+    // DBから最終更新時刻を取得
+    if (state.deviceOwnerId) {
+      const deviceId = localStorage.getItem("kazutan-plus-device-id");
+      if (deviceId) {
+        try {
+          const snap = await db.ref(`${DB_ROOT}/tokens/${state.deviceOwnerId}/${deviceId}`).once("value");
+          const data = snap.val();
+          if (data && data.updatedAt) {
+            statusEl.textContent = `✅ 通知 有効（自動更新中）`;
+          } else {
+            statusEl.textContent = "✅ 許可済み（未登録）";
+          }
+        } catch (e) {
+          statusEl.textContent = "✅ 許可済み";
+        }
+      } else {
+        statusEl.textContent = "✅ 許可済み";
+      }
+    } else {
+      statusEl.textContent = "✅ 許可済み";
+    }
     btnEl.textContent = "再登録";
   } else if (status === "denied") {
     statusEl.textContent = "❌ ブロック中";
